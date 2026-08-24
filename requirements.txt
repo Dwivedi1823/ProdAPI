@@ -1,0 +1,13 @@
+dotenv
+langchain
+langchain-core
+langchain-community
+PyMuPDF
+beautifulsoup4
+pydantic-settings
+langchain-openai
+langgraph
+langsmith
+fastapi
+slowapi
+uvicorn

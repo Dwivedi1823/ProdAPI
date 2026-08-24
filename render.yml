@@ -1,0 +1,24 @@
+services:
+	- type: web
+		name: prodrag-api
+		runtime: docker
+		plan: free
+		dockerfilePath: ./Dockerfile
+		dockerContext: .
+		healthCheckPath: /health
+		autoDeploy: true
+		envVars:
+			- key: OPENAI_API_KEY
+				sync: false
+			- key: LANGSMITH_API_KEY
+				sync: false
+			- key: LANGSMITH_TRACING
+				value: "true"
+			- key: LANGCHAIN_TRACING_V2
+				value: "true"
+			- key: LANGSMITH_PROJECT
+				value: multi-agent-research-project
+			- key: APP_ENV
+				value: production
+			- key: LOG_LEVEL
+				value: INFO
