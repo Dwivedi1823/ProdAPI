@@ -83,9 +83,12 @@ async def lifespan(app: FastAPI):
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
-    title="Production LangGraph API",
+    title="DWD AI",
     description="A production-ready chat API with security, caching, rate limiting, and observability.",
     version="1.0.0",
+    docs_url="/docs" if not get_settings().is_production else None,
+    redoc_url="/redoc" if not get_settings().is_production else None,
+    openapi_url="/openapi.json" if not get_settings().is_production else None,
     lifespan=lifespan,
 )
 app.state.limiter = limiter
@@ -148,6 +151,8 @@ async def get_metrics():
     """
     Metrics endpoint exposing application usage, latency, and cache statistics.
     """
+    if get_settings().is_production:
+        raise HTTPException(status_code=404, detail="Not found")
     if metrics is None:
         return MetricsResponse()
     return MetricsResponse(**metrics.get_metrics_data())
@@ -155,6 +160,8 @@ async def get_metrics():
 @app.get("/cache/stats")
 async def cache_stats():
     """Cache performance statistics."""
+    if get_settings().is_production:
+        raise HTTPException(status_code=404, detail="Not found")
     return cache.stats
 
 @app.post("/chat", response_model=ChatResponse, tags=["Chat"])

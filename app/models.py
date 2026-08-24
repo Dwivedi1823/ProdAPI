@@ -7,7 +7,7 @@ from uuid import uuid4
 from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class ChatRequest(BaseModel):
     """
@@ -31,6 +31,13 @@ class ChatRequest(BaseModel):
         max_length=12,
         description="Recent conversation messages used for context."
     )
+
+    @field_validator("message")
+    @classmethod
+    def message_must_contain_text(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("message must contain non-whitespace characters")
+        return value
 
     model_config = {
         "json_schema_extra": {
