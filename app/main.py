@@ -1,11 +1,13 @@
 import asyncio
+import json
 import os
 import time
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from langsmith import traceable
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -88,6 +90,7 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 
 # ==============================================================================
@@ -111,16 +114,8 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
 
 @app.get("/", tags=["System"])
 async def root():
-    """Root endpoint providing API metadata and links."""
-    settings = get_settings()
-    return {
-        "name": "Production LangGraph API",
-        "version": "1.0.0",
-        "environment": settings.app_env,
-        "docs_url": "/docs",
-        "health_url": "/health",
-        "metrics_url": "/metrics",
-    }
+    """Serve the chat interface."""
+    return FileResponse("frontend/index.html")
 
 
 @app.get("/health", response_model=HealthCheckResponse, tags=["Monitoring"])
@@ -184,6 +179,12 @@ async def chat(request: Request, body: ChatRequest):
         is_allowed, cleaned_message, notes = security.check_input(body.message)
         security_notes.extend(notes)
 
+        history_payload = [item.model_dump() for item in body.history]
+        cache_query = json.dumps(
+            {"message": cleaned_message, "history": history_payload},
+            sort_keys=True,
+        )
+
         if not is_allowed:
             logger.warning(
                 "Request blocked by security",
@@ -201,7 +202,7 @@ async def chat(request: Request, body: ChatRequest):
             )
 
         # Step 2: Cache Lookup
-        cached_response = cache.get(cleaned_message)
+        cached_response = cache.get(cache_query)
         if cached_response is not None:
             metrics.record_request(latency_ms=0, cache_hit=True)
             logger.info(
@@ -219,7 +220,11 @@ async def chat(request: Request, body: ChatRequest):
 
         # Step 3: Agent Invocation (run in threadpool to prevent blocking the event loop)
         try:
-            result = await asyncio.to_thread(agent.invoke, cleaned_message)
+            result = await asyncio.to_thread(
+                agent.invoke,
+                cleaned_message,
+                history_payload,
+            )
         except Exception as e:
             logger.error(
                 f"Agent invocation failed: {e}",
@@ -244,7 +249,7 @@ async def chat(request: Request, body: ChatRequest):
         security_notes.extend(output_warnings)
 
         # Step 5: Cache Storage
-        cache.set(cleaned_message, validated_response)
+        cache.set(cache_query, validated_response)
 
         # Step 6: Metrics & Response Return
         input_tokens = int(len(cleaned_message.split()) * 1.3)

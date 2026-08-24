@@ -12,6 +12,7 @@ RUN python -m pip install --upgrade pip \
 
 COPY app ./app
 COPY data ./data
+COPY frontend ./frontend
 
 RUN useradd --create-home --shell /usr/sbin/nologin appuser \
 	&& chown -R appuser:appuser /app

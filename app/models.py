@@ -5,6 +5,7 @@ Pydantic models for input validation and output formatting of API requests and r
 
 from uuid import uuid4
 from datetime import datetime, timezone
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +26,11 @@ class ChatRequest(BaseModel):
         description="Conversation thread ID, Unique identifier for the chat thread.",
         examples=["user-session-12345"]
     )
+    history: list["ConversationMessage"] = Field(
+        default_factory=list,
+        max_length=12,
+        description="Recent conversation messages used for context."
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -34,6 +40,11 @@ class ChatRequest(BaseModel):
             }
         }
     }
+
+
+class ConversationMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(..., min_length=1, max_length=4000)
     
 class ChatResponse(BaseModel):
     """

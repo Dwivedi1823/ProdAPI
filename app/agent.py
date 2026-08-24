@@ -8,7 +8,7 @@ from typing_extensions import TypedDict, Annotated
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, SystemMessage
 from langsmith import traceable
 
 from app.config import get_settings
@@ -126,14 +126,28 @@ class ProductionAgent:
 
         return graph.compile()
 
+    SYSTEM_PROMPT = (
+        "You are DWD AI, a thoughtful and reliable assistant. "
+        "Answer the user's question directly, with accurate and useful detail. "
+        "Use short paragraphs or bullets when they improve clarity. "
+        "Ask a focused clarifying question when the request is ambiguous. "
+        "Do not invent facts; state uncertainty plainly."
+    )
+
     @traceable(name="production_agent_invoke")
-    def  invoke(self, message: str) -> dict:
+    def invoke(self, message: str, history: list[dict] | None = None) -> dict:
         """
         Invoke the agent with a user message.
         Returns: {"reponse": str, "model_used": str,  "error": str | None}
         """
+        context_messages = [SystemMessage(content=self.SYSTEM_PROMPT)]
+        for item in (history or [])[-12:]:
+            message_type = AIMessage if item["role"] == "assistant" else HumanMessage
+            context_messages.append(message_type(content=item["content"]))
+        context_messages.append(HumanMessage(content=message))
+
         result = self.graph.invoke({
-            "messages": [HumanMessage(content=message)],
+            "messages": context_messages,
             "error": None,
             "retry_count": 0,
             "model_used": ""

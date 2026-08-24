@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A focused AI assistant for thoughtful answers.">
+  <title>DWD AI | AI assistant</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar" aria-label="Conversation navigation">
+      <div class="brand-mark" aria-hidden="true">A</div>
+      <div>
+        <p class="eyebrow">Private workspace</p>
+        <h1>DWD AI</h1>
+      </div>
+      <button class="new-chat" id="new-chat" type="button">
+        <span aria-hidden="true">+</span> New conversation
+      </button>
+      <div class="sidebar-note">
+        <span class="status-dot" aria-hidden="true"></span>
+        <div>
+          <strong>System online</strong>
+          <small>Ready when you are</small>
+        </div>
+      </div>
+      <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API documentation <span aria-hidden="true">↗</span></a>
+    </aside>
+
+    <section class="chat-panel" aria-label="Chat with DWD AI">
+      <header class="chat-header">
+        <div>
+          <p class="eyebrow">Conversation</p>
+          <h2>Ask anything</h2>
+        </div>
+        <div class="model-pill"><span class="status-dot" aria-hidden="true"></span> DWD AI</div>
+      </header>
+
+      <div class="messages" id="messages" aria-live="polite">
+        <div class="welcome-message">
+          <div class="welcome-icon" aria-hidden="true">✦</div>
+          <p class="eyebrow">Good to see you</p>
+          <h3>What would you like to explore?</h3>
+          <p class="welcome-copy">Bring a question, a rough idea, or a problem worth untangling.</p>
+          <div class="suggestions" role="list">
+            <button type="button" data-prompt="Explain how retrieval-augmented generation works">Explain RAG simply</button>
+            <button type="button" data-prompt="Help me think through a difficult decision">Think through a decision</button>
+            <button type="button" data-prompt="Give me a concise plan for learning Python">Make a learning plan</button>
+          </div>
+        </div>
+      </div>
+
+      <form class="composer" id="chat-form">
+        <label class="sr-only" for="message-input">Message Attention</label>
+          <textarea id="message-input" name="message" rows="1" maxlength="1000" placeholder="Message DWD AI..." required></textarea>
+        <div class="composer-footer">
+          <span class="composer-hint">Enter to send · Shift + Enter for a new line</span>
+          <button class="send-button" type="submit" aria-label="Send message" title="Send message">↑</button>
+        </div>
+      </form>
+      <p class="disclaimer">AI can make mistakes. Check important information.</p>
+    </section>
+  </main>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
