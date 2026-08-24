@@ -19,22 +19,44 @@ function formatInline(value) {
 function renderMarkdown(value) {
   const lines = escapeHtml(value.trim()).split('\n');
   const output = [];
-  let list = [];
   let listType = '';
+  let listItems = [];
+  let nestedItems = [];
+  let orderedItemOpen = false;
+  const closeNestedList = () => {
+    if (nestedItems.length && listItems.length) {
+      listItems[listItems.length - 1] += `<ul>${nestedItems.join('')}</ul>`;
+    }
+    nestedItems = [];
+  };
   const closeList = () => {
-    if (!list.length) return;
-    output.push(`<${listType}>${list.join('')}</${listType}>`);
-    list = [];
+    closeNestedList();
+    if (orderedItemOpen && listItems.length) listItems[listItems.length - 1] += '</li>';
+    if (listItems.length) output.push(`<${listType}>${listItems.join('')}</${listType}>`);
+    listItems = [];
     listType = '';
+    orderedItemOpen = false;
   };
   lines.forEach((line) => {
     const unordered = line.match(/^\s*[-*] (.+)$/);
     const ordered = line.match(/^\s*\d+\. (.+)$/);
     if (unordered || ordered) {
       const nextType = unordered ? 'ul' : 'ol';
-      if (listType && listType !== nextType) closeList();
-      listType = nextType;
-      list.push(`<li>${formatInline((unordered || ordered)[1])}</li>`);
+      if (nextType === 'ul' && listType === 'ol' && listItems.length) {
+        nestedItems.push(`<li>${formatInline(unordered[1])}</li>`);
+      } else {
+        if (listType && listType !== nextType) closeList();
+        listType = nextType;
+        if (nextType === 'ol') {
+          if (orderedItemOpen) listItems[listItems.length - 1] += '</li>';
+          listItems.push(`<li>${formatInline(ordered[1])}`);
+          orderedItemOpen = true;
+        } else {
+          listItems.push(`<li>${formatInline(unordered[1])}</li>`);
+        }
+      }
+    } else if (!line.trim() && listType) {
+      return;
     } else {
       closeList();
       if (/^#{1,3} /.test(line)) output.push(`<h4>${formatInline(line.replace(/^#{1,3} /, ''))}</h4>`);
