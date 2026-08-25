@@ -9,5 +9,7 @@ def main():
     response = llm.invoke("Hello, how are you?")
     print(f"Response from LLM: {response}")
 
+def aux():
+    print
 if __name__ == "__main__":
     main()
